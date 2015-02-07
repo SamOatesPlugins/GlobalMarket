@@ -65,12 +65,12 @@ public class MarketStorage {
         boolean sqlite = market.getConfigHandler().getStorageMethod() == StorageMethod.SQLITE;
         try {
             // Create items table
-            db.createStatement("CREATE TABLE IF NOT EXISTS items ("
+            db.createStatement("CREATE TABLE IF NOT EXISTS market_items ("
                     + (sqlite ? "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " : "id int NOT NULL PRIMARY KEY AUTO_INCREMENT, ")
                     + (sqlite ? "item MEDIUMTEXT UNIQUE" : "item MEDIUMTEXT CHARACTER SET utf8 COLLATE utf8_general_ci")
                     + ")").execute();
             // Create listings table
-            db.createStatement("CREATE TABLE IF NOT EXISTS listings ("
+            db.createStatement("CREATE TABLE IF NOT EXISTS market_listings ("
                     + (sqlite ? "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " : "id int NOT NULL PRIMARY KEY AUTO_INCREMENT, ")
                     + "seller TINYTEXT, "
                     + "item int, "
@@ -79,7 +79,7 @@ public class MarketStorage {
                     + "world TINYTEXT, "
                     + "time BIGINT)").execute();
             // Create mail table
-            db.createStatement("CREATE TABLE IF NOT EXISTS mail ("
+            db.createStatement("CREATE TABLE IF NOT EXISTS market_mail ("
                     + (sqlite ? "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " : "id int NOT NULL PRIMARY KEY AUTO_INCREMENT, ")
                     + "owner TINYTEXT, "
                     + "item int, "
@@ -88,16 +88,16 @@ public class MarketStorage {
                     + "world TINYTEXT, "
                     + "pickup DOUBLE)").execute();
             // Create queue table
-            db.createStatement("CREATE TABLE IF NOT EXISTS queue ("
+            db.createStatement("CREATE TABLE IF NOT EXISTS market_queue ("
                     + (sqlite ? "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " : "id int NOT NULL PRIMARY KEY AUTO_INCREMENT, ")
                     + "data MEDIUMTEXT)").execute();
             // Create users metadata table
-            db.createStatement("CREATE TABLE IF NOT EXISTS users ("
+            db.createStatement("CREATE TABLE IF NOT EXISTS market_users ("
                     + "name varchar(16) NOT NULL UNIQUE, "
                     + "earned DOUBLE, "
                     + "spent DOUBLE)").execute();
             // Create history table
-            db.createStatement("CREATE TABLE IF NOT EXISTS history ("
+            db.createStatement("CREATE TABLE IF NOT EXISTS market_history ("
                     + (sqlite ? "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " : "id int NOT NULL PRIMARY KEY AUTO_INCREMENT, ")
                     + "player TINYTEXT, "
                     + "action TINYTEXT, "
@@ -131,7 +131,7 @@ public class MarketStorage {
 
     private void loadItems(Database db, String dbName, boolean sqlite) throws SQLException{
         items.clear();
-        MarketResult res = db.createStatement("SELECT * FROM items").query();
+        MarketResult res = db.createStatement("SELECT * FROM market_items").query();
         Map<Integer, String> sanitizedItems = new HashMap<Integer, String>();
         List<Integer> unloadable = new ArrayList<Integer>();
         while(res.next()) {
@@ -168,13 +168,13 @@ public class MarketStorage {
             }
         }
         for (Entry<Integer, String> ent : sanitizedItems.entrySet()) {
-            db.createStatement("UPDATE listings SET item = ? WHERE id = ?").setString(ent.getValue()).setInt(ent.getKey()).execute();
+            db.createStatement("UPDATE market_listings SET item = ? WHERE id = ?").setString(ent.getValue()).setInt(ent.getKey()).execute();
         }
         for (int un : unloadable) {
-            db.createStatement("DELETE FROM items WHERE id = ?").setInt(un).execute();
+            db.createStatement("DELETE FROM market_items WHERE id = ?").setInt(un).execute();
         }
-        res = sqlite ? db.createStatement("SELECT seq FROM sqlite_sequence WHERE name = ? ").setString("items").query() :
-                       db.createStatement("SHOW TABLE STATUS FROM " + dbName + " LIKE ?").setString("items").query();
+        res = sqlite ? db.createStatement("SELECT seq FROM sqlite_sequence WHERE name = ? ").setString("market_items").query() :
+                       db.createStatement("SHOW TABLE STATUS FROM " + dbName + " LIKE ?").setString("market_items").query();
         if (res.next()) {
             itemIndex = sqlite ? res.getInt(1) + 1 : res.getInt("Auto_increment");
         }
@@ -184,7 +184,7 @@ public class MarketStorage {
     private void loadListings(Database db, String dbName, boolean sqlite) throws SQLException {
         listings.clear();
         List<Listing> unloadable = new ArrayList<Listing>();
-        MarketResult res = db.createStatement("SELECT * FROM listings ORDER BY id ASC").query();
+        MarketResult res = db.createStatement("SELECT * FROM market_listings ORDER BY id ASC").query();
         while(res.next()) {
             Listing listing = res.constructListing(this);
             int id = listing.getItemId();
@@ -197,13 +197,13 @@ public class MarketStorage {
         }
         if (!unloadable.isEmpty()) {
             for (Listing listing : unloadable) {
-                db.createStatement("DELETE FROM listings WHERE id = ?").setInt(listing.getId()).execute();
+                db.createStatement("DELETE FROM market_listings WHERE id = ?").setInt(listing.getId()).execute();
             }
             market.log.warning(String.format("Removed %s listings due to missing items.", unloadable.size()));
             unloadable.clear();
         }
-        res = sqlite ? db.createStatement("SELECT seq FROM sqlite_sequence WHERE name = ? ").setString("listings").query() :
-            db.createStatement("SHOW TABLE STATUS FROM " + dbName + " LIKE ?").setString("listings").query();
+        res = sqlite ? db.createStatement("SELECT seq FROM sqlite_sequence WHERE name = ? ").setString("market_listings").query() :
+            db.createStatement("SHOW TABLE STATUS FROM " + dbName + " LIKE ?").setString("market_listings").query();
             if (res.next()) {
                 listingIndex = sqlite ? res.getInt(1) + 1 : res.getInt("Auto_increment");
             }
@@ -214,7 +214,7 @@ public class MarketStorage {
     private void loadMail(Database db, String dbName, boolean sqlite) throws SQLException {
         mail.clear();
         List<Mail> unloadable = new ArrayList<Mail>();
-        MarketResult res = db.createStatement("SELECT * FROM mail ORDER BY id ASC").query();
+        MarketResult res = db.createStatement("SELECT * FROM market_mail ORDER BY id ASC").query();
         while(res.next()) {
             Mail m = res.constructMail(this);
             int id = m.getItemId();
@@ -228,13 +228,13 @@ public class MarketStorage {
         }
         if (!unloadable.isEmpty()) {
             for (Mail mail : unloadable) {
-                db.createStatement("DELETE FROM mail WHERE id = ?").setInt(mail.getId()).execute();
+                db.createStatement("DELETE FROM market_mail WHERE id = ?").setInt(mail.getId()).execute();
             }
             market.log.warning(String.format("Removed %s mail due to missing items.", unloadable.size()));
             unloadable.clear();
         }
-        res = sqlite ? db.createStatement("SELECT seq FROM sqlite_sequence WHERE name = ? ").setString("mail").query() :
-                       db.createStatement("SHOW TABLE STATUS FROM " + dbName + " LIKE ?").setString("mail").query();
+        res = sqlite ? db.createStatement("SELECT seq FROM sqlite_sequence WHERE name = ? ").setString("market_mail").query() :
+                       db.createStatement("SHOW TABLE STATUS FROM " + dbName + " LIKE ?").setString("market_mail").query();
         if (res.next()) {
             mailIndex = sqlite ? res.getInt(1) + 1 : res.getInt("Auto_increment");
         }
@@ -244,7 +244,7 @@ public class MarketStorage {
     private void loadQueue(Database db, String dbName, boolean sqlite) throws SQLException {
         queue.clear();
         List<QueueItem> unloadable = new ArrayList<QueueItem>();
-        MarketResult res = db.createStatement("SELECT * FROM queue ORDER BY id ASC").query();
+        MarketResult res = db.createStatement("SELECT * FROM market_queue ORDER BY id ASC").query();
         Yaml yaml = new Yaml(new CustomClassLoaderConstructor(Market.class.getClassLoader()));
         while(res.next()) {
             String q = res.getString("data");
@@ -269,13 +269,13 @@ public class MarketStorage {
         }
         if (!unloadable.isEmpty()) {
             for (QueueItem item : unloadable) {
-                db.createStatement("DELETE FROM queue WHERE id = ?").setInt(item.getId()).execute();
+                db.createStatement("DELETE FROM market_queue WHERE id = ?").setInt(item.getId()).execute();
             }
             market.log.warning(String.format("Removed %s items from queue due to missing items.", unloadable.size()));
             unloadable.clear();
         }
-        res = sqlite ? db.createStatement("SELECT seq FROM sqlite_sequence WHERE name = ? ").setString("queue").query() :
-                       db.createStatement("SHOW TABLE STATUS FROM " + dbName + " LIKE ?").setString("queue").query();
+        res = sqlite ? db.createStatement("SELECT seq FROM sqlite_sequence WHERE name = ? ").setString("market_queue").query() :
+                       db.createStatement("SHOW TABLE STATUS FROM " + dbName + " LIKE ?").setString("market_queue").query();
         if (res.next()) {
             queueIndex = sqlite ? res.getInt(1) + 1 : res.getInt("Auto_increment");
         }
@@ -344,7 +344,7 @@ public class MarketStorage {
         queueIndex++;
         queue.put(item.getId(), item);
         asyncDb.addStatement(
-            new QueuedStatement("INSERT INTO queue (data) VALUES (?)")
+            new QueuedStatement("INSERT INTO market_queue (data) VALUES (?)")
             .setValue(new Yaml().dump(item))
             .setFailureNotice(String.format("Failed to insert queued listing (id: %s, itemId: %s), queue id: %s", listing.getId(), listing.getItemId(), item.getId()))
         );
@@ -362,7 +362,7 @@ public class MarketStorage {
             queueIndex++;
             queue.put(item.getId(), item);
             asyncDb.addStatement(
-                new QueuedStatement("INSERT INTO queue (data) VALUES (?)")
+                new QueuedStatement("INSERT INTO market_queue (data) VALUES (?)")
                 .setValue(new Yaml().dump(item))
                 .setFailureNotice(String.format("Failed to insert queued listing (id: %s, itemId: %s), queue id: %s", listing.getId(), listing.getItemId(), item.getId()))
             );
@@ -375,7 +375,7 @@ public class MarketStorage {
         QueueItem item = new QueueItem(queueIndex++, System.currentTimeMillis(), mail);
         queue.put(item.getId(), item);
         asyncDb.addStatement(
-            new QueuedStatement("INSERT INTO queue (data) VALUES (?)")
+            new QueuedStatement("INSERT INTO market_queue (data) VALUES (?)")
             .setValue(new Yaml().dump(item))
             .setFailureNotice(String.format("Failed to insert queued mail (id: %s, itemId: %s), queue id: %s", mail.getId(), mail.getItemId(), item.getId()))
         );
@@ -387,7 +387,7 @@ public class MarketStorage {
         QueueItem item = new QueueItem(queueIndex++, System.currentTimeMillis(), mail);
         queue.put(item.getId(), item);
         asyncDb.addStatement(
-            new QueuedStatement("INSERT INTO queue (data) VALUES (?)")
+            new QueuedStatement("INSERT INTO market_queue (data) VALUES (?)")
             .setValue(new Yaml().dump(item))
             .setFailureNotice(String.format("Failed to insert queued mail (id: %s, itemId: %s), queue id: %s", mail.getId(), mail.getItemId(), item.getId()))
         );
@@ -406,7 +406,7 @@ public class MarketStorage {
             storeListing(item.getListing());
         }
         asyncDb.addStatement(
-            new QueuedStatement("DELETE FROM queue WHERE id=?")
+            new QueuedStatement("DELETE FROM market_queue WHERE id=?")
             .setValue(id)
             .setFailureNotice(String.format("Problem removing id %s from queue:", id))
         );
@@ -464,14 +464,14 @@ public class MarketStorage {
         }
         if (asyncDb.getDb().isSqlite()) {
             asyncDb.addStatement(
-                new QueuedStatement("INSERT OR IGNORE INTO items (item) VALUES (?)")
+                new QueuedStatement("INSERT OR IGNORE INTO market_items (item) VALUES (?)")
                 .setValue(storable)
                 .setFailureNotice(String.format("Problem storing ItemStack, should have ID of %s", itemIndex))
             );
         } else {
             String store = itemStackToString(storable);
             asyncDb.addStatement(
-                new QueuedStatement("INSERT INTO items (item) SELECT * FROM (SELECT ?) AS tmp WHERE NOT EXISTS (SELECT item FROM items WHERE item = ?) LIMIT 1;")
+                new QueuedStatement("INSERT INTO market_items (item) SELECT * FROM (SELECT ?) AS tmp WHERE NOT EXISTS (SELECT item FROM market_items WHERE item = ?) LIMIT 1;")
                 .setValue(store)
                 .setValue(store)
                 .setFailureNotice(String.format("Problem storing ItemStack, should have ID of %s", itemIndex))
@@ -497,7 +497,7 @@ public class MarketStorage {
         Long time = System.currentTimeMillis();
         int id = listingIndex++;
         asyncDb.addStatement(
-            new QueuedStatement("INSERT INTO listings (id, seller, item, amount, price, world, time) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            new QueuedStatement("INSERT INTO market_listings (id, seller, item, amount, price, world, time) VALUES (?, ?, ?, ?, ?, ?, ?)")
             .setValue(id)
             .setValue(seller)
             .setValue(itemId)
@@ -525,7 +525,7 @@ public class MarketStorage {
             Long time = System.currentTimeMillis();
             int id = listingIndex++;
             asyncDb.addStatement(
-                new QueuedStatement("INSERT INTO listings (id, seller, item, amount, price, world, time) VALUES (?, ?, ?, ?, ?, ?, ?)")
+                new QueuedStatement("INSERT INTO market_listings (id, seller, item, amount, price, world, time) VALUES (?, ?, ?, ?, ?, ?, ?)")
                 .setValue(id)
                 .setValue(seller)
                 .setValue(itemId)
@@ -548,7 +548,7 @@ public class MarketStorage {
 
     public void storeListing(Listing listing) {
         asyncDb.addStatement(
-            new QueuedStatement("INSERT INTO listings (id, seller, item, amount, price, world, time) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            new QueuedStatement("INSERT INTO market_listings (id, seller, item, amount, price, world, time) VALUES (?, ?, ?, ?, ?, ?, ?)")
             .setValue(listing.getId())
             .setValue(listing.getSeller())
             .setValue(listing.getItemId())
@@ -570,7 +570,7 @@ public class MarketStorage {
 
     public void storeMail(Mail m) {
         asyncDb.addStatement(
-            new QueuedStatement("INSERT INTO mail (id, owner, item, amount, sender, world, pickup) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            new QueuedStatement("INSERT INTO market_mail (id, owner, item, amount, sender, world, pickup) VALUES (?, ?, ?, ?, ?, ?, ?)")
             .setValue(m.getId())
             .setValue(m.getOwner())
             .setValue(m.getItemId())
@@ -766,7 +766,7 @@ public class MarketStorage {
         condensedListings.clear();
         buildCondensed();
         asyncDb.addStatement(
-            new QueuedStatement("DELETE FROM listings WHERE id=?")
+            new QueuedStatement("DELETE FROM market_listings WHERE id=?")
             .setValue(id)
             .setFailureNotice(String.format("Error removing listing id %s", id))
         );
@@ -793,7 +793,7 @@ public class MarketStorage {
     public Mail createMail(String owner, String from, int itemId, int amount, String world) {
         int id = mailIndex++;
         asyncDb.addStatement(
-            new QueuedStatement("INSERT INTO mail (id, owner, item, amount, sender, world, pickup) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            new QueuedStatement("INSERT INTO market_mail (id, owner, item, amount, sender, world, pickup) VALUES (?, ?, ?, ?, ?, ?, ?)")
             .setValue(id)
             .setValue(owner)
             .setValue(itemId)
@@ -817,7 +817,7 @@ public class MarketStorage {
         int itemId = storeItem(item);
         int id = mailIndex++;
         asyncDb.addStatement(
-            new QueuedStatement("INSERT INTO mail (id, owner, item, amount, sender, world, pickup) VALUES (?, ?, ?, ?, ?, ?, ?)")
+            new QueuedStatement("INSERT INTO market_mail (id, owner, item, amount, sender, world, pickup) VALUES (?, ?, ?, ?, ?, ?, ?)")
             .setValue(id)
             .setValue(owner)
             .setValue(itemId)
@@ -890,7 +890,7 @@ public class MarketStorage {
 
     public void nullifyMailPayment(int id) {
         asyncDb.addStatement(
-            new QueuedStatement("UPDATE mail SET pickup=? WHERE id=?")
+            new QueuedStatement("UPDATE market_mail SET pickup=? WHERE id=?")
             .setValue(0)
             .setValue(id)
             .setFailureNotice(String.format("Error nullifying mail payment with id %s", id))
@@ -910,7 +910,7 @@ public class MarketStorage {
         mail.remove(id);
         worldMail.get(m.getWorld()).remove(m);
         asyncDb.addStatement(
-            new QueuedStatement("DELETE FROM mail WHERE id=?")
+            new QueuedStatement("DELETE FROM market_mail WHERE id=?")
             .setValue(id)
             .setFailureNotice(String.format("Error removing mail id %s", id))
         );
