@@ -83,7 +83,7 @@ public class ReloadCommand extends SubCommand {
             String seller = market.getInfiniteSeller();
             for (Listing listing : infinite) {
                 listing.seller = seller;
-                market.getStorage().getAsyncDb().addStatement(new QueuedStatement("UPDATE listings SET seller=? WHERE id=?")
+                market.getStorage().getAsyncDb().addStatement(new QueuedStatement("UPDATE market_listings SET seller=? WHERE id=?")
                 .setValue(seller)
                 .setValue(listing.getId()));
             }

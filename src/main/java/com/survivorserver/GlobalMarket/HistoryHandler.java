@@ -52,7 +52,7 @@ public class HistoryHandler {
 
     public void storeHistory(String player, String who, MarketAction action, ItemStack item, double price) {
         int itemId = storage.storeItem(item);
-        asyncDb.addStatement(new QueuedStatement("INSERT INTO `history`(`player`, `action`, `who`, `item`, `amount`, `price`, `time`) VALUES (?,?,?,?,?,?,?)")
+        asyncDb.addStatement(new QueuedStatement("INSERT INTO `market_history`(`player`, `action`, `who`, `item`, `amount`, `price`, `time`) VALUES (?,?,?,?,?,?,?)")
         .setValue(player)
         .setValue(action.toString())
         .setValue(who)
@@ -65,7 +65,7 @@ public class HistoryHandler {
     public void storeHistory(String player, String who, MarketAction action, List<ItemStack> items, double pricePerItem) {
         int itemId = storage.storeItem(items.get(0));
         for (ItemStack item : items) {
-            asyncDb.addStatement(new QueuedStatement("INSERT INTO `history`(`player`, `action`, `who`, `item`, `amount`, `price`, `time`) VALUES (?,?,?,?,?,?,?)")
+            asyncDb.addStatement(new QueuedStatement("INSERT INTO `market_history`(`player`, `action`, `who`, `item`, `amount`, `price`, `time`) VALUES (?,?,?,?,?,?,?)")
             .setValue(player)
             .setValue(action.toString())
             .setValue(who)
@@ -77,7 +77,7 @@ public class HistoryHandler {
     }
 
     public void storeHistory(String player, String who, MarketAction action, int itemId, int amount, double price) {
-        asyncDb.addStatement(new QueuedStatement("INSERT INTO `history`(`player`, `action`, `who`, `item`, `amount`, `price`, `time`) VALUES (?,?,?,?,?,?,?)")
+        asyncDb.addStatement(new QueuedStatement("INSERT INTO `market_history`(`player`, `action`, `who`, `item`, `amount`, `price`, `time`) VALUES (?,?,?,?,?,?,?)")
         .setValue(player)
         .setValue(action.toString())
         .setValue(who)
@@ -89,13 +89,13 @@ public class HistoryHandler {
 
     public void incrementSpent(String player, double amount) {
         if (config.getStorageMethod() == StorageMethod.SQLITE) {
-            asyncDb.addStatement(new QueuedStatement("INSERT OR REPLACE INTO users (name, earned, spent) VALUES (?, COALESCE((SELECT earned FROM users WHERE name=?), 0) + ?, COALESCE((SELECT spent FROM users WHERE name=?), 0))")
+            asyncDb.addStatement(new QueuedStatement("INSERT OR REPLACE INTO market_users (name, earned, spent) VALUES (?, COALESCE((SELECT earned FROM users WHERE name=?), 0) + ?, COALESCE((SELECT spent FROM users WHERE name=?), 0))")
             .setValue(player)
             .setValue(player)
             .setValue(amount)
             .setValue(player));
         } else {
-            asyncDb.addStatement(new QueuedStatement("INSERT INTO users (name,earned,spent) VALUES (?,?,?) ON DUPLICATE KEY UPDATE earned=earned+?")
+            asyncDb.addStatement(new QueuedStatement("INSERT INTO market_users (name,earned,spent) VALUES (?,?,?) ON DUPLICATE KEY UPDATE earned=earned+?")
             .setValue(player)
             .setValue(0)
             .setValue(amount)
@@ -105,13 +105,13 @@ public class HistoryHandler {
 
     public void incrementEarned(String player, double amount) {
         if (config.getStorageMethod() == StorageMethod.SQLITE) {
-            asyncDb.addStatement(new QueuedStatement("INSERT OR REPLACE INTO users (name, earned, spent) VALUES (?, COALESCE((SELECT earned FROM users WHERE name=?), 0) + ?, COALESCE((SELECT spent FROM users WHERE name=?), 0))")
+            asyncDb.addStatement(new QueuedStatement("INSERT OR REPLACE INTO market_users (name, earned, spent) VALUES (?, COALESCE((SELECT earned FROM users WHERE name=?), 0) + ?, COALESCE((SELECT spent FROM users WHERE name=?), 0))")
             .setValue(player)
             .setValue(player)
             .setValue(amount)
             .setValue(player));
         } else {
-            asyncDb.addStatement(new QueuedStatement("INSERT INTO users (name,earned,spent) VALUES (?,?,?) ON DUPLICATE KEY UPDATE earned=earned+?")
+            asyncDb.addStatement(new QueuedStatement("INSERT INTO market_users (name,earned,spent) VALUES (?,?,?) ON DUPLICATE KEY UPDATE earned=earned+?")
             .setValue(player)
             .setValue(amount)
             .setValue(0)
