@@ -60,6 +60,10 @@ public class MarketStorage {
         queue = new LinkedHashMap<Integer, QueueItem>();
         condensedListings = new TreeSet<Listing>();
     }
+    
+    public Map<Integer, Mail> getAllMail() {
+        return mail;
+    }
 
     public void loadSchema(Database db) {
         boolean sqlite = market.getConfigHandler().getStorageMethod() == StorageMethod.SQLITE;

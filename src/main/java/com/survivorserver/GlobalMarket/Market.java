@@ -50,10 +50,17 @@ import com.survivorserver.GlobalMarket.Lib.ItemIndex;
 import com.survivorserver.GlobalMarket.Lib.PacketManager;
 import com.survivorserver.GlobalMarket.SQL.AsyncDatabase;
 import com.survivorserver.GlobalMarket.SQL.Database;
+import com.survivorserver.GlobalMarket.SQL.QueuedStatement;
 import com.survivorserver.GlobalMarket.SQL.StorageMethod;
 import com.survivorserver.GlobalMarket.Tasks.CleanTask;
 import com.survivorserver.GlobalMarket.Tasks.ExpireTask;
 import com.survivorserver.GlobalMarket.Tasks.Queue;
+import fr.ribesg.bukkit.ncore.NCore;
+import fr.ribesg.bukkit.ncore.config.UuidDb;
+import java.lang.reflect.Field;
+import java.util.UUID;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.plugin.Plugin;
 
 public class Market extends JavaPlugin implements Listener {
 
@@ -80,6 +87,8 @@ public class Market extends JavaPlugin implements Listener {
     private boolean mcpcp = false;
     String prefix;
 
+    private NCore ncore = null;
+    
     public void onEnable() {
         log = getLogger();
         tasks = new ArrayList<Integer>();
@@ -175,6 +184,71 @@ public class Market extends JavaPlugin implements Listener {
         storage = new MarketStorage(this, asyncDb);
         worldLinks = new HashMap<String, String[]>();
         initializeStorage();
+        
+        Plugin ncorePlugin = this.getServer().getPluginManager().getPlugin("NCore");
+        if (ncorePlugin != null) {
+            this.ncore = (NCore)ncorePlugin;
+            if (this.ncore != null) {
+                
+                final Market m = this;
+                Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+
+                    public void run() {
+                        for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {                    
+                            String currentName = UuidDb.getName(player.getUniqueId());
+                            List<String> oldNames = UuidDb.getPreviousNames(player.getUniqueId());
+                            if (oldNames != null && !oldNames.isEmpty()) {
+                                
+                                AsyncDatabase db = m.storage.getAsyncDb();
+                                
+                                // Update listings
+                                for (Listing listing : m.storage.getAllListings()) {
+                                    if (listing.seller != null) {
+                                        if (oldNames.contains(listing.seller)) {
+                                            listing.seller = currentName;
+                                            db.addStatement(new QueuedStatement("UPDATE market_listings SET seller=? WHERE id=?")
+                                                .setValue(currentName)
+                                                .setValue(listing.getId()));
+                                        }
+                                    }
+                                }
+                                
+                                // Update history
+                                for (String oldName : oldNames) {
+                                    db.addStatement(new QueuedStatement("UPDATE market_history SET player=? WHERE player=?")
+                                                .setValue(currentName)
+                                                .setValue(oldName));
+                                    
+                                    db.addStatement(new QueuedStatement("UPDATE market_history SET who=? WHERE who=?")
+                                                .setValue(currentName)
+                                                .setValue(oldName));
+                                }
+                                
+                                // Update mail
+                                for (Mail mail : m.storage.getAllMail().values()) {
+                                    if (mail.owner != null) {
+                                        if (oldNames.contains(mail.owner)) {
+                                            mail.owner = currentName;
+                                            db.addStatement(new QueuedStatement("UPDATE market_mail SET owner=? WHERE id=?")
+                                                .setValue(currentName)
+                                                .setValue(mail.getId()));
+                                        }
+                                        
+                                        if (oldNames.contains(mail.sender)) {
+                                            mail.sender = currentName;
+                                            db.addStatement(new QueuedStatement("UPDATE market_mail SET sender=? WHERE id=?")
+                                                .setValue(currentName)
+                                                .setValue(mail.getId()));
+                                        }
+                                    }
+                                }
+                            }
+                        }          
+                    }
+                    
+                }, 20L);      
+            }            
+        }
     }
 
     public void initializeStorage() {

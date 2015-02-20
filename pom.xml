@@ -40,6 +40,13 @@
             <systemPath>${project.basedir}/libs/MarketCompanion-1.7.10-2.0.1.jar</systemPath>
         </dependency>
         <dependency>
+            <groupId>fr.ribesg</groupId>
+            <artifactId>NCore</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/NCore.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>net.milkbowl.vault</groupId>
             <artifactId>Vault</artifactId>
             <version>1.5.2</version>

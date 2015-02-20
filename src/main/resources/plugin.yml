@@ -4,4 +4,4 @@ version: '@version@'
 commands:
     market:
         description: Market commands
-depend: [Vault]
+depend: [Vault, NCore]
