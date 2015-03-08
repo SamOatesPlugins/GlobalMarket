@@ -213,17 +213,6 @@ public class Market extends JavaPlugin implements Listener {
                                     }
                                 }
                                 
-                                // Update history
-                                for (String oldName : oldNames) {
-                                    db.addStatement(new QueuedStatement("UPDATE market_history SET player=? WHERE player=?")
-                                                .setValue(currentName)
-                                                .setValue(oldName));
-                                    
-                                    db.addStatement(new QueuedStatement("UPDATE market_history SET who=? WHERE who=?")
-                                                .setValue(currentName)
-                                                .setValue(oldName));
-                                }
-                                
                                 // Update mail
                                 for (Mail mail : m.storage.getAllMail().values()) {
                                     if (mail.owner != null) {
@@ -233,14 +222,7 @@ public class Market extends JavaPlugin implements Listener {
                                                 .setValue(currentName)
                                                 .setValue(mail.getId()));
                                         }
-                                        
-                                        if (oldNames.contains(mail.sender)) {
-                                            mail.sender = currentName;
-                                            db.addStatement(new QueuedStatement("UPDATE market_mail SET sender=? WHERE id=?")
-                                                .setValue(currentName)
-                                                .setValue(mail.getId()));
-                                        }
-                                    }
+                                    }                                    
                                 }
                             }
                         }          

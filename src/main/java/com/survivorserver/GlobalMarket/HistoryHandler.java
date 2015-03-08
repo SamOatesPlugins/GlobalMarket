@@ -89,7 +89,7 @@ public class HistoryHandler {
 
     public void incrementSpent(String player, double amount) {
         if (config.getStorageMethod() == StorageMethod.SQLITE) {
-            asyncDb.addStatement(new QueuedStatement("INSERT OR REPLACE INTO market_users (name, earned, spent) VALUES (?, COALESCE((SELECT earned FROM users WHERE name=?), 0) + ?, COALESCE((SELECT spent FROM users WHERE name=?), 0))")
+            asyncDb.addStatement(new QueuedStatement("INSERT OR REPLACE INTO market_users (name, earned, spent) VALUES (?, COALESCE((SELECT earned FROM market_users WHERE name=?), 0) + ?, COALESCE((SELECT spent FROM market_users WHERE name=?), 0))")
             .setValue(player)
             .setValue(player)
             .setValue(amount)
@@ -105,7 +105,7 @@ public class HistoryHandler {
 
     public void incrementEarned(String player, double amount) {
         if (config.getStorageMethod() == StorageMethod.SQLITE) {
-            asyncDb.addStatement(new QueuedStatement("INSERT OR REPLACE INTO market_users (name, earned, spent) VALUES (?, COALESCE((SELECT earned FROM users WHERE name=?), 0) + ?, COALESCE((SELECT spent FROM users WHERE name=?), 0))")
+            asyncDb.addStatement(new QueuedStatement("INSERT OR REPLACE INTO market_users (name, earned, spent) VALUES (?, COALESCE((SELECT earned FROM market_users WHERE name=?), 0) + ?, COALESCE((SELECT spent FROM market_users WHERE name=?), 0))")
             .setValue(player)
             .setValue(player)
             .setValue(amount)
@@ -121,7 +121,7 @@ public class HistoryHandler {
 
     public double[] getMonetaryUsage(String player, Database db) throws SQLException {
         double[] eS = new double[] {0, 0, 0};
-        MarketResult result = db.createStatement("SELECT * FROM users WHERE name=?").setString(player).query();
+        MarketResult result = db.createStatement("SELECT * FROM market_users WHERE name=?").setString(player).query();
         if (result.next()) {
             eS[0] = result.getDouble(2);
             eS[1] = result.getDouble(3);
@@ -139,7 +139,7 @@ public class HistoryHandler {
             history.add(ChatColor.GRAY + "| " + ChatColor.GREEN + locale.get("history.total_earned", market.getEcon().format(eS[0])));
             history.add(ChatColor.GRAY + "| " + ChatColor.GREEN + locale.get("history.total_spent", market.getEcon().format(eS[1])));
             history.add(ChatColor.GRAY + "| " + ChatColor.GREEN + locale.get("history.actual_amount_made", market.getEcon().format(eS[2])));
-            MarketResult result = db.createStatement("SELECT history.player, history.action, history.who, history.amount, history.price, history.time, items.item FROM history, items WHERE history.player = ? AND history.item = items.id")
+            MarketResult result = db.createStatement("SELECT history.player, history.action, history.who, history.amount, history.price, history.time, items.item FROM market_history, items WHERE history.player = ? AND history.item = items.id")
                     .setString(player)
                     .query();
             while(result.next()) {
@@ -192,7 +192,7 @@ public class HistoryHandler {
         String itemName = market.getItemName(item);
         int itemId = 0;
         try {
-            MarketResult result = db.createStatement("SELECT id FROM items WHERE item=?")
+            MarketResult result = db.createStatement("SELECT id FROM market_items WHERE item=?")
                     .setString(MarketStorage.itemStackToString(item))
                     .query();
             if (result.next()) {
@@ -201,7 +201,7 @@ public class HistoryHandler {
             if (itemId != 0) {
                 int amount = 0;
                 double price = 0;
-                MarketResult res = db.createStatement("SELECT * FROM history WHERE item=? AND action=?")
+                MarketResult res = db.createStatement("SELECT * FROM market_history WHERE item=? AND action=?")
                         .setInt(itemId)
                         .setString(MarketAction.LISTING_SOLD.toString())
                         .query();
